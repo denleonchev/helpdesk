@@ -13,7 +13,7 @@ AI-powered support ticket system. Incoming emails are auto-classified, summarize
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React + TypeScript, Tailwind CSS v4, React Router |
+| Frontend | React + TypeScript, Tailwind CSS v4, shadcn/ui (Nova preset), React Router |
 | Backend | Node.js + Express + TypeScript |
 | Database | PostgreSQL via Prisma ORM |
 | Auth | Database sessions |
@@ -35,6 +35,14 @@ AI-powered support ticket system. Incoming emails are auto-classified, summarize
 - `bun run dev:client` — client only
 
 Server runs on port 3000. Health check: `GET /api/health`.
+
+## UI Components
+
+- Use shadcn/ui for all UI components: `npx shadcn@latest add <component>`
+- Components land in `client/src/components/ui/`
+- Utilities in `client/src/lib/utils.ts` (`cn()` helper)
+- Import alias `@/` maps to `client/src/`
+- Theme: Nova preset (Radix base, Geist font, neutral color scale, CSS variables)
 
 ## Key Conventions
 

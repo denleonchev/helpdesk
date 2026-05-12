@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router";
 import { authClient } from "./lib/auth-client";
 import { LoginPage } from "./pages/LoginPage";
 import { HomePage } from "./pages/HomePage";
+import { Button } from "@/components/ui/button";
 
 function Layout() {
   const navigate = useNavigate();
@@ -14,16 +15,13 @@ function Layout() {
 
   return (
     <>
-      <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-        <span className="font-semibold text-gray-900">Helpdesk</span>
+      <nav className="bg-background border-b px-6 py-3 flex items-center justify-between">
+        <span className="font-semibold">Helpdesk</span>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">{session?.user.name}</span>
-          <button
-            onClick={handleSignOut}
-            className="text-sm px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
-          >
+          <span className="text-sm text-muted-foreground">{session?.user.name}</span>
+          <Button variant="outline" size="sm" onClick={handleSignOut}>
             Sign out
-          </button>
+          </Button>
         </div>
       </nav>
       <Outlet />
