@@ -13,7 +13,7 @@ AI-powered support ticket system. Incoming emails are auto-classified, summarize
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React + TypeScript, Tailwind CSS, React Router |
+| Frontend | React + TypeScript, Tailwind CSS v4, React Router |
 | Backend | Node.js + Express + TypeScript |
 | Database | PostgreSQL via Prisma ORM |
 | Auth | Database sessions |

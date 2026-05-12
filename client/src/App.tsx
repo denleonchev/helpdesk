@@ -14,13 +14,13 @@ function Layout() {
 
   return (
     <>
-      <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.75rem 1.5rem", background: "white", borderBottom: "1px solid #e5e7eb" }}>
-        <span style={{ fontWeight: 600, fontSize: "0.9375rem" }}>Helpdesk</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <span style={{ fontSize: "0.875rem", color: "#374151" }}>{session?.user.name}</span>
+      <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+        <span className="font-semibold text-gray-900">Helpdesk</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600">{session?.user.name}</span>
           <button
             onClick={handleSignOut}
-            style={{ padding: "0.375rem 0.75rem", background: "transparent", border: "1px solid #d1d5db", borderRadius: "6px", cursor: "pointer", fontSize: "0.875rem" }}
+            className="text-sm px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Sign out
           </button>
