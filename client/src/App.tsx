@@ -3,6 +3,7 @@ import { authClient } from "./lib/auth-client";
 import { LoginPage } from "./pages/LoginPage";
 import { HomePage } from "./pages/HomePage";
 import { Button } from "@/components/ui/button";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 function Layout() {
   const navigate = useNavigate();
@@ -30,23 +31,15 @@ function Layout() {
 }
 
 export default function App() {
-  const { data: session, isPending } = authClient.useSession();
-
-  if (isPending) return null;
-
   return (
     <Routes>
-      {session ? (
+      <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="*" element={<Navigate to="/" />} />
         </Route>
-      ) : (
-        <>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </>
-      )}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+      <Route path="/login" element={<LoginPage />} />
     </Routes>
   );
 }
