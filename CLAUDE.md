@@ -38,6 +38,7 @@ Server runs on port 3000. Health check: `GET /api/health`.
 
 ## Key Conventions
 
+- All forms use React Hook Form with Zod validation
 - All API routes are prefixed with `/api`
 - Authentication uses database sessions (not JWT)
 - Role-based access: admin-only routes must be protected by role middleware
