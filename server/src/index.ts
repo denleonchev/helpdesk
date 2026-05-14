@@ -9,6 +9,11 @@ import { auth } from "./lib/auth";
 const app = express();
 const PORT = process.env.PORT ?? 3000;
 
+// Trust the first proxy hop so req.ip reflects the real client IP behind a reverse proxy
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 const allowedOrigins = process.env.TRUSTED_ORIGINS?.split(",").filter(Boolean);
 if (!allowedOrigins?.length) {
   throw new Error("TRUSTED_ORIGINS must be set");
@@ -25,6 +30,7 @@ app.use(
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  skip: () => process.env.NODE_ENV !== "production",
   message: { error: "Too many login attempts, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,

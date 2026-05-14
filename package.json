@@ -5,6 +5,12 @@
   "scripts": {
     "dev": "bun run --cwd server dev & bun run --cwd client dev",
     "dev:server": "bun run --cwd server dev",
-    "dev:client": "bun run --cwd client dev"
+    "dev:client": "bun run --cwd client dev",
+    "test:e2e": "bunx playwright test",
+    "test:e2e:ui": "bunx playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.8.0"
   }
 }

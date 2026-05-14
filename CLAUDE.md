@@ -44,6 +44,22 @@ Server runs on port 3000. Health check: `GET /api/health`.
 - Import alias `@/` maps to `client/src/`
 - Theme: Nova preset (Radix base, Geist font, neutral color scale, CSS variables)
 
+## E2E Tests
+
+Tests use Playwright and live in `/e2e`. Config is at `playwright.config.ts`.
+
+**Commands (run from root):**
+- `bun run test:e2e` — run all e2e tests
+- `bun run test:e2e:ui` — open Playwright UI mode
+
+**Test environment:**
+- Server on port `3001`, client on port `5174`
+- Separate database: `helpdesk_test` (created automatically on first run)
+- Global setup (`playwright/global-setup.ts`) creates the DB, runs migrations, and seeds it
+- Seed credentials: `admin@example.com` / `changeme`
+- Config loaded from `.env.test` (gitignored)
+- Rate limiting is disabled in test (only active when `NODE_ENV=production`)
+
 ## Key Conventions
 
 - All forms use React Hook Form with Zod validation

@@ -5,3 +5,8 @@ dist/
 
 **/generated/
 agent-memory
+
+# Playwright
+playwright-report/
+test-results/
+.env.test
