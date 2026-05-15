@@ -36,14 +36,6 @@ AI-powered support ticket system. Incoming emails are auto-classified, summarize
 
 Server runs on port 3000. Health check: `GET /api/health`.
 
-## UI Components
-
-- Use shadcn/ui for all UI components: `npx shadcn@latest add <component>`
-- Components land in `client/src/components/ui/`
-- Utilities in `client/src/lib/utils.ts` (`cn()` helper)
-- Import alias `@/` maps to `client/src/`
-- Theme: Nova preset (Radix base, Geist font, neutral color scale, CSS variables)
-
 ## E2E Tests
 
 Tests use Playwright and live in `/e2e`. Config is at `playwright.config.ts`.
@@ -51,12 +43,3 @@ Tests use Playwright and live in `/e2e`. Config is at `playwright.config.ts`.
 **Commands (run from root):**
 - `bun run test:e2e` — run all e2e tests
 - `bun run test:e2e:ui` — open Playwright UI mode
-
-## Key Conventions
-
-- All forms use React Hook Form with Zod validation
-- All API routes are prefixed with `/api`
-- Authentication uses database sessions (not JWT)
-- Role-based access: admin-only routes must be protected by role middleware
-- Prisma is the only way to interact with the database — no raw SQL
-- AI features (classification, summary, suggested reply) go through the Claude API
