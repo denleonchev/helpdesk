@@ -8,6 +8,7 @@
 
 ## Key Conventions
 
+- All server state fetching and mutations use TanStack Query (`useQuery`, `useMutation`) — no raw `useEffect` + `useState` for data fetching
 - All forms use React Hook Form with Zod validation
 - All API routes are prefixed with `/api`
 - Authentication uses database sessions (not JWT)

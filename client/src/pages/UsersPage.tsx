@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import {
   Table,
@@ -19,16 +19,10 @@ type User = {
 };
 
 export function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    apiFetch<User[]>("/api/users")
-      .then(setUsers)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: users, isPending, error } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => apiFetch<User[]>("/api/users"),
+  });
 
   return (
     <div className="p-6 space-y-4">
@@ -39,10 +33,10 @@ export function UsersPage() {
         </p>
       </div>
 
-      {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {isPending && <p className="text-sm text-muted-foreground">Loading...</p>}
+      {error && <p className="text-sm text-destructive">{error.message}</p>}
 
-      {!loading && !error && (
+      {users && (
         <Table>
           <TableHeader>
             <TableRow>
