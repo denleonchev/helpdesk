@@ -37,7 +37,7 @@ export function UsersPage() {
       {error && <p className="text-sm text-destructive">{error.message}</p>}
 
       {isPending ? (
-        <Table>
+        <Table data-testid="users-loading">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
@@ -58,7 +58,7 @@ export function UsersPage() {
           </TableBody>
         </Table>
       ) : users && (
-        <Table>
+        <Table data-testid="users-table">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
