@@ -5,6 +5,7 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { auth } from "./lib/auth";
+import usersRouter from "./routes/users";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -39,6 +40,8 @@ const authLimiter = rateLimit({
 app.use("/api/auth/sign-in", authLimiter);
 app.all("/api/auth/*", toNodeHandler(auth));
 app.use(express.json());
+
+app.use("/api/users", usersRouter);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
