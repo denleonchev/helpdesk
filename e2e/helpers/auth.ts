@@ -2,6 +2,8 @@ import type { Page } from "@playwright/test";
 
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@example.com";
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "changeme";
+export const AGENT_EMAIL = process.env.AGENT_EMAIL ?? "agent@example.com";
+export const AGENT_PASSWORD = process.env.AGENT_PASSWORD ?? "changeme";
 
 /**
  * Fills the login form and submits it. Waits for navigation to the dashboard.
@@ -24,4 +26,11 @@ export async function loginAs(
  */
 export async function loginAsAdmin(page: Page): Promise<void> {
   await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+}
+
+/**
+ * Logs in as the seeded agent user.
+ */
+export async function loginAsAgent(page: Page): Promise<void> {
+  await loginAs(page, AGENT_EMAIL, AGENT_PASSWORD);
 }
