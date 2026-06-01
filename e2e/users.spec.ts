@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsAdmin, loginAsAgent, ADMIN_EMAIL } from "./helpers/auth";
+import { loginAsAdmin, loginAsAgent, ADMIN_EMAIL, AGENT_EMAIL } from "./helpers/auth";
 
 test.describe("Users page", () => {
   test("admin sees users in the table with their email and role", async ({ page }) => {
@@ -64,6 +64,46 @@ test.describe("Edit user", () => {
 
     // The page is entirely inaccessible to agents — they are redirected away
     await expect(page).toHaveURL("/");
+  });
+});
+
+test.describe("Delete user", () => {
+  test("admin can delete the agent user", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/users");
+
+    const table = page.getByTestId("users-table");
+    await expect(table).toBeVisible();
+
+    // Scope to the agent's row and verify a Delete button is present
+    const agentRow = table.getByRole("row").filter({ hasText: AGENT_EMAIL });
+    await expect(agentRow.getByRole("button", { name: "Delete" })).toBeVisible();
+
+    await agentRow.getByRole("button", { name: "Delete" }).click();
+
+    // Confirmation alertdialog should open and display the agent's name
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible();
+
+    // Click the confirm Delete button scoped inside the dialog to avoid
+    // matching any other "Delete" button that may exist on the page
+    await dialog.getByRole("button", { name: "Delete" }).click();
+
+    // Dialog closes and the agent's row is removed from the table
+    await expect(dialog).not.toBeVisible();
+    await expect(table.getByRole("row").filter({ hasText: AGENT_EMAIL })).not.toBeVisible();
+  });
+
+  test("admin cannot delete themselves — no Delete button on own row", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/users");
+
+    const table = page.getByTestId("users-table");
+    await expect(table).toBeVisible();
+
+    // The admin's own row must not contain a Delete button
+    const adminRow = table.getByRole("row").filter({ hasText: ADMIN_EMAIL });
+    await expect(adminRow.getByRole("button", { name: "Delete" })).not.toBeVisible();
   });
 });
 

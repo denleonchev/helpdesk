@@ -10,6 +10,7 @@ const router = Router();
 
 router.get("/", requireAuth, requireAdmin, async (_req, res) => {
   const users = await prisma.user.findMany({
+    where: { deletedAt: null },
     select: { id: true, name: true, email: true, role: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
@@ -59,6 +60,31 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
   });
 
   res.status(201).json(user);
+});
+
+router.delete("/:id", requireAuth, requireAdmin, async (req: Request<{ id: string }>, res) => {
+  if (req.params.id === res.locals.session.user.id) {
+    res.status(403).json({ error: "You cannot delete your own account" });
+    return;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.id, deletedAt: null },
+  });
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: req.params.id },
+      data: { deletedAt: new Date() },
+    }),
+    prisma.session.deleteMany({ where: { userId: req.params.id } }),
+  ]);
+
+  res.status(204).end();
 });
 
 router.patch("/:id", requireAuth, requireAdmin, async (req: Request<{ id: string }>, res) => {

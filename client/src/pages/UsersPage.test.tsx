@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UsersPage } from "./UsersPage";
@@ -7,7 +7,13 @@ import { UsersPage } from "./UsersPage";
 vi.mock("@/lib/api");
 import { apiFetch } from "@/lib/api";
 
+vi.mock("@/lib/auth-client", () => ({
+  authClient: { useSession: vi.fn() },
+}));
+import { authClient } from "@/lib/auth-client";
+
 const mockApiFetch = apiFetch as ReturnType<typeof vi.fn>;
+const mockUseSession = authClient.useSession as ReturnType<typeof vi.fn>;
 
 function renderPage() {
   const queryClient = new QueryClient({
@@ -27,6 +33,7 @@ const USERS = [
 
 beforeEach(() => {
   vi.resetAllMocks();
+  mockUseSession.mockReturnValue({ data: null });
 });
 
 describe("UsersPage", () => {
@@ -123,5 +130,31 @@ describe("UsersPage", () => {
     await user.click(screen.getAllByRole("button", { name: "Edit" })[0]);
     expect(screen.getByRole("dialog", { name: "Edit user" })).toBeInTheDocument();
     expect(screen.getByLabelText("Name")).toHaveValue("Alice Admin");
+  });
+
+  it("renders a Delete button for every user when no current user is known", async () => {
+    mockApiFetch.mockResolvedValue(USERS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("users-table"));
+    expect(screen.getAllByRole("button", { name: "Delete" })).toHaveLength(USERS.length);
+  });
+
+  it("hides the Delete button for the current user's own row", async () => {
+    mockUseSession.mockReturnValue({ data: { user: { id: USERS[0].id } } });
+    mockApiFetch.mockResolvedValue(USERS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("users-table"));
+    expect(screen.getAllByRole("button", { name: "Delete" })).toHaveLength(USERS.length - 1);
+  });
+
+  it("opens the Delete confirmation dialog when Delete is clicked", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockResolvedValue(USERS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("users-table"));
+    await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText(/Alice Admin/)).toBeInTheDocument();
   });
 });

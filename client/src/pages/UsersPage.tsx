@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { authClient } from "@/lib/auth-client";
 import { apiFetch } from "@/lib/api";
 import {
   Table,
@@ -15,10 +16,14 @@ import { Button } from "@/components/ui/button";
 import type { User } from "@/types/users";
 import { CreateUserDialog } from "./CreateUserDialog";
 import { EditUserDialog } from "./EditUserDialog";
+import { DeleteUserDialog } from "./DeleteUserDialog";
 
 export function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const { data: session } = authClient.useSession();
+  const currentUserId = session?.user.id;
   const { data: users, isPending, error } = useQuery({
     queryKey: ["users"],
     queryFn: () => apiFetch<User[]>("/api/users"),
@@ -42,6 +47,13 @@ export function UsersPage() {
           user={editingUser}
           open={true}
           onOpenChange={(open) => { if (!open) setEditingUser(null); }}
+        />
+      )}
+      {deletingUser && (
+        <DeleteUserDialog
+          user={deletingUser}
+          open={true}
+          onOpenChange={(open) => { if (!open) setDeletingUser(null); }}
         />
       )}
 
@@ -94,9 +106,16 @@ export function UsersPage() {
                   </TableCell>
                   <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>
-                      Edit
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>
+                        Edit
+                      </Button>
+                      {user.id !== currentUserId && (
+                        <Button variant="destructive" size="sm" onClick={() => setDeletingUser(user)}>
+                          Delete
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
