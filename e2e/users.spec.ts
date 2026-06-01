@@ -10,7 +10,7 @@ test.describe("Users page", () => {
     await expect(table).toBeVisible();
 
     const adminRow = table.getByRole("row").filter({ hasText: ADMIN_EMAIL });
-    await expect(adminRow.getByText("admin")).toBeVisible();
+    await expect(adminRow.getByRole("cell", { name: "admin", exact: true })).toBeVisible();
   });
 
   test("agent is redirected away from /users", async ({ page }) => {
