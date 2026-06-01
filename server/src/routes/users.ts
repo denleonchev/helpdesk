@@ -1,18 +1,12 @@
 import { Router } from "express";
-import { z } from "zod";
 import { requireAuth } from "../middleware/requireAuth";
 import { requireAdmin } from "../middleware/requireAdmin";
 import prisma from "../lib/prisma";
 import { hashPassword, generateRandomString } from "better-auth/crypto";
 import { Role } from "../generated/prisma/enums";
+import { createUserSchema } from "@helpdesk/shared";
 
 const router = Router();
-
-const createUserSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  email: z.email("Valid email is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
 
 router.get("/", requireAuth, requireAdmin, async (_req, res) => {
   const users = await prisma.user.findMany({

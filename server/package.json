@@ -10,6 +10,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@helpdesk/shared": "workspace:*",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "better-auth": "^1.6.10",

@@ -6,6 +6,11 @@
 - Import alias `@/` maps to `client/src/`
 - Theme: Nova preset (Radix base, Geist font, neutral color scale, CSS variables)
 
+## Shared Package
+
+- Zod schemas shared between client and server live in `shared/src/schemas/` and are exported via `@helpdesk/shared`
+- Never duplicate a schema — if client and server both validate the same shape, it belongs in the shared package
+
 ## Data Fetching
 
 - All server state fetching and mutations use TanStack Query (`useQuery`, `useMutation`) — no raw `useEffect` + `useState` for data fetching

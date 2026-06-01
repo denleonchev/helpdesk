@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { createUserSchema, type CreateUserInput } from "@helpdesk/shared";
 import { apiFetch } from "@/lib/api";
 import {
   Table,
@@ -32,14 +32,6 @@ type User = {
   createdAt: string;
 };
 
-const createUserSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  email: z.email("Invalid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
-
-type CreateUserValues = z.infer<typeof createUserSchema>;
-
 function CreateUserDialog({
   open,
   onOpenChange,
@@ -54,10 +46,10 @@ function CreateUserDialog({
     reset,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<CreateUserValues>({ resolver: zodResolver(createUserSchema) });
+  } = useForm<CreateUserInput>({ resolver: zodResolver(createUserSchema) });
 
   const mutation = useMutation({
-    mutationFn: (values: CreateUserValues) =>
+    mutationFn: (values: CreateUserInput) =>
       apiFetch<User>("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,17 +65,27 @@ function CreateUserDialog({
     },
   });
 
-  function onSubmit(values: CreateUserValues) {
+  function onSubmit(values: CreateUserInput) {
     mutation.mutate(values);
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { reset(); onOpenChange(next); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        reset();
+        onOpenChange(next);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create user</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+          className="space-y-4"
+        >
           <div className="space-y-1.5">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -117,7 +119,9 @@ function CreateUserDialog({
               {...register("password")}
             />
             {errors.password && (
-              <p className="text-destructive text-xs">{errors.password.message}</p>
+              <p className="text-destructive text-xs">
+                {errors.password.message}
+              </p>
             )}
           </div>
           {errors.root && (
@@ -127,7 +131,10 @@ function CreateUserDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => { reset(); onOpenChange(false); }}
+              onClick={() => {
+                reset();
+                onOpenChange(false);
+              }}
             >
               Cancel
             </Button>
@@ -143,7 +150,11 @@ function CreateUserDialog({
 
 export function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: users, isPending, error } = useQuery({
+  const {
+    data: users,
+    isPending,
+    error,
+  } = useQuery({
     queryKey: ["users"],
     queryFn: () => apiFetch<User[]>("/api/users"),
   });
@@ -177,41 +188,53 @@ export function UsersPage() {
           <TableBody>
             {Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={i}>
-                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : users && (
-        <Table data-testid="users-table">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Joined</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                    {user.role}
-                  </Badge>
+                  <Skeleton className="h-4 w-32" />
                 </TableCell>
                 <TableCell>
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  <Skeleton className="h-4 w-48" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-24" />
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      ) : (
+        users && (
+          <Table data-testid="users-table">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Joined</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={user.role === "admin" ? "default" : "secondary"}
+                    >
+                      {user.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
       )}
     </div>
   );

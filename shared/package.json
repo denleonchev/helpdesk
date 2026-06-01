@@ -1,0 +1,11 @@
+{
+  "name": "@helpdesk/shared",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "peerDependencies": {
+    "zod": "^4"
+  }
+}
