@@ -63,7 +63,7 @@ async function seedAgentUser() {
   const client = new Client({ connectionString: TEST_DATABASE_URL });
   await client.connect();
   try {
-    const { rows } = await client.query("SELECT 1 FROM \"user\" WHERE email = $1", [email]);
+    const { rows } = await client.query("SELECT 1 FROM \"User\" WHERE email = $1", [email]);
     if (rows.length > 0) return;
 
     const userId = randomUUID();
@@ -71,11 +71,11 @@ async function seedAgentUser() {
     const hashed = await hashPassword(password);
 
     await client.query(
-      `INSERT INTO "user" (id, name, email, "emailVerified", role, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO "User" (id, name, email, "emailVerified", role, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [userId, "Agent", email, true, "agent", now, now]
     );
     await client.query(
-      `INSERT INTO account (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO "Account" (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [randomUUID(), userId, "credential", userId, hashed, now, now]
     );
     console.log(`Agent user created: ${email}`);
