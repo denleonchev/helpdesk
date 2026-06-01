@@ -38,7 +38,7 @@ const authLimiter = rateLimit({
 });
 
 app.use("/api/auth/sign-in", authLimiter);
-app.all("/api/auth/*", toNodeHandler(auth));
+app.all("/api/auth/*path", toNodeHandler(auth));
 app.use(express.json());
 
 app.use("/api/users", usersRouter);
