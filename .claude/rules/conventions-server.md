@@ -8,6 +8,7 @@
 ## Database
 
 - Prisma is the only way to interact with the database — no raw SQL
+- Use Prisma-generated enums (from `src/generated/prisma/enums`) instead of hardcoded strings for enum fields
 
 ## AI
 

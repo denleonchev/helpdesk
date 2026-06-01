@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { requireAdmin } from "../middleware/requireAdmin";
 import prisma from "../lib/prisma";
 import { hashPassword, generateRandomString } from "better-auth/crypto";
+import { Role } from "../generated/prisma/enums";
 
 const router = Router();
 
@@ -46,7 +47,7 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
       name: name.trim(),
       email,
       emailVerified: false,
-      role: "agent",
+      role: Role.agent,
       createdAt: now,
       updatedAt: now,
       accounts: {
