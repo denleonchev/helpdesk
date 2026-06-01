@@ -12,6 +12,7 @@ const SERVER_DIR = path.resolve(__dirname, "../server");
 
 export default async function globalSetup() {
   await createDatabaseIfNotExists();
+  await resetDatabase();
   runMigrations();
   runSeed();
   await seedAgentUser();
@@ -44,6 +45,18 @@ function runMigrations() {
   });
 }
 
+async function resetDatabase() {
+  const client = new Client({ connectionString: TEST_DATABASE_URL });
+  await client.connect();
+  try {
+    await client.query(`DROP SCHEMA public CASCADE`);
+    await client.query(`CREATE SCHEMA public`);
+    console.log("Test database schema reset");
+  } finally {
+    await client.end();
+  }
+}
+
 function runSeed() {
   execSync("bun run seed", {
     cwd: SERVER_DIR,
@@ -63,9 +76,6 @@ async function seedAgentUser() {
   const client = new Client({ connectionString: TEST_DATABASE_URL });
   await client.connect();
   try {
-    const { rows } = await client.query("SELECT 1 FROM \"User\" WHERE email = $1", [email]);
-    if (rows.length > 0) return;
-
     const userId = randomUUID();
     const now = new Date().toISOString();
     const hashed = await hashPassword(password);
