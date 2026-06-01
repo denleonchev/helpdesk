@@ -1,10 +1,10 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { requireAuth } from "../middleware/requireAuth";
 import { requireAdmin } from "../middleware/requireAdmin";
 import prisma from "../lib/prisma";
-import { hashPassword, generateRandomString } from "better-auth/crypto";
+import { hashPassword, generateRandomString, verifyPassword } from "better-auth/crypto";
 import { Role } from "../generated/prisma/enums";
-import { createUserSchema } from "@helpdesk/shared";
+import { createUserSchema, editUserSchema } from "@helpdesk/shared";
 
 const router = Router();
 
@@ -59,6 +59,57 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
   });
 
   res.status(201).json(user);
+});
+
+router.patch("/:id", requireAuth, requireAdmin, async (req: Request<{ id: string }>, res) => {
+  const result = editUserSchema.safeParse(req.body);
+  if (!result.success) {
+    res.status(400).json({ error: result.error.issues[0].message });
+    return;
+  }
+  const { name, email, oldPassword, newPassword } = result.data;
+
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  if (email !== user.email) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      res.status(409).json({ error: "A user with this email already exists" });
+      return;
+    }
+  }
+
+  if (oldPassword && newPassword) {
+    const account = await prisma.account.findFirst({
+      where: { userId: user.id, providerId: "credential" },
+    });
+    if (!account?.password) {
+      res.status(400).json({ error: "No password set for this user" });
+      return;
+    }
+    const valid = await verifyPassword({ hash: account.password, password: oldPassword });
+    if (!valid) {
+      res.status(400).json({ error: "Old password is incorrect" });
+      return;
+    }
+    const hashed = await hashPassword(newPassword);
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { password: hashed, updatedAt: new Date() },
+    });
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: req.params.id },
+    data: { name: name.trim(), email, updatedAt: new Date() },
+    select: { id: true, name: true, email: true, role: true, createdAt: true },
+  });
+
+  res.json(updated);
 });
 
 export default router;
