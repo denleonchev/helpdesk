@@ -6,6 +6,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:unit": "vitest run src/lib src/hooks",
+    "test:integration": "vitest run src/pages",
     "test:watch": "vitest"
   },
   "dependencies": {
