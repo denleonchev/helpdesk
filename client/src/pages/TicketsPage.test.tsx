@@ -63,6 +63,11 @@ const TICKETS = [
   },
 ];
 
+// Default mock response — 2 tickets fitting on one page
+const RESPONSE = { data: TICKETS, total: 2 };
+// Response signalling more than one page exists
+const RESPONSE_MULTIPAGE = { data: TICKETS, total: 15 };
+
 beforeEach(() => {
   vi.resetAllMocks();
 });
@@ -82,14 +87,14 @@ describe("TicketsPage", () => {
   });
 
   it("replaces skeleton with data table after loading", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => expect(screen.getByTestId("tickets-table")).toBeInTheDocument());
     expect(screen.queryByTestId("tickets-loading")).not.toBeInTheDocument();
   });
 
   it("renders ticket subject and sender name", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(screen.getByText("App crashes on login")).toBeInTheDocument();
@@ -97,21 +102,21 @@ describe("TicketsPage", () => {
   });
 
   it("renders sender email below sender name", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(screen.getByText("alice@example.com")).toBeInTheDocument();
   });
 
   it("renders ticket id prefixed with #", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(screen.getByText("#1")).toBeInTheDocument();
   });
 
   it("renders the status badge", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(screen.getByText("open")).toBeInTheDocument();
@@ -119,21 +124,21 @@ describe("TicketsPage", () => {
   });
 
   it("renders the category label when present", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(within(screen.getByTestId("tickets-table")).getByText("Technical")).toBeInTheDocument();
   });
 
   it("renders a dash when category is null", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(screen.getByText("—")).toBeInTheDocument();
   });
 
   it("formats the received date", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(
@@ -142,7 +147,7 @@ describe("TicketsPage", () => {
   });
 
   it("shows empty state message when there are no tickets", async () => {
-    mockApiFetch.mockResolvedValue([]);
+    mockApiFetch.mockResolvedValue({ data: [], total: 0 });
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(screen.getByText("No tickets found")).toBeInTheDocument();
@@ -156,17 +161,19 @@ describe("TicketsPage", () => {
     expect(screen.queryByTestId("tickets-loading")).not.toBeInTheDocument();
   });
 
-  it("fetches with createdAt desc by default", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+  // --- sorting ---
+
+  it("fetches with createdAt desc and page 1 by default", async () => {
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(mockApiFetch).toHaveBeenCalledWith(
-      "/api/tickets?sortBy=createdAt&sortOrder=desc"
+      "/api/tickets?sortBy=createdAt&sortOrder=desc&page=1&pageSize=10"
     );
   });
 
-  it("refetches with new column and ascending order when a header is clicked", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+  it("refetches with new column ascending when a header is clicked", async () => {
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
 
@@ -174,33 +181,34 @@ describe("TicketsPage", () => {
 
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith(
-        "/api/tickets?sortBy=subject&sortOrder=asc"
+        "/api/tickets?sortBy=subject&sortOrder=asc&page=1&pageSize=10"
       )
     );
   });
 
   it("toggles to descending on second click of the same header", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
 
     fireEvent.click(screen.getByRole("button", { name: /Subject/ }));
-    // wait for the data table to reappear (new queryKey triggers a loading cycle)
     await waitFor(() => screen.getByTestId("tickets-table"));
     expect(mockApiFetch).toHaveBeenCalledWith(
-      "/api/tickets?sortBy=subject&sortOrder=asc"
+      "/api/tickets?sortBy=subject&sortOrder=asc&page=1&pageSize=10"
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Subject/ }));
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith(
-        "/api/tickets?sortBy=subject&sortOrder=desc"
+        "/api/tickets?sortBy=subject&sortOrder=desc&page=1&pageSize=10"
       )
     );
   });
 
+  // --- filtering ---
+
   it("refetches with status param when a status is selected", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
 
@@ -208,13 +216,13 @@ describe("TicketsPage", () => {
 
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith(
-        "/api/tickets?sortBy=createdAt&sortOrder=desc&status=open"
+        "/api/tickets?sortBy=createdAt&sortOrder=desc&page=1&pageSize=10&status=open"
       )
     );
   });
 
   it("refetches with category param when a category is selected", async () => {
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
 
@@ -224,14 +232,14 @@ describe("TicketsPage", () => {
 
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith(
-        "/api/tickets?sortBy=createdAt&sortOrder=desc&category=technical_question"
+        "/api/tickets?sortBy=createdAt&sortOrder=desc&page=1&pageSize=10&category=technical_question"
       )
     );
   });
 
   it("refetches with search param after debounce", async () => {
     const user = userEvent.setup();
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
 
@@ -240,7 +248,7 @@ describe("TicketsPage", () => {
     await waitFor(
       () =>
         expect(mockApiFetch).toHaveBeenCalledWith(
-          "/api/tickets?sortBy=createdAt&sortOrder=desc&search=alice"
+          "/api/tickets?sortBy=createdAt&sortOrder=desc&page=1&pageSize=10&search=alice"
         ),
       { timeout: 1000 }
     );
@@ -248,7 +256,7 @@ describe("TicketsPage", () => {
 
   it("combines active filters in the request", async () => {
     const user = userEvent.setup();
-    mockApiFetch.mockResolvedValue(TICKETS);
+    mockApiFetch.mockResolvedValue(RESPONSE);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
 
@@ -260,9 +268,89 @@ describe("TicketsPage", () => {
     await waitFor(
       () =>
         expect(mockApiFetch).toHaveBeenCalledWith(
-          "/api/tickets?sortBy=createdAt&sortOrder=desc&status=open&search=crash"
+          "/api/tickets?sortBy=createdAt&sortOrder=desc&page=1&pageSize=10&status=open&search=crash"
         ),
       { timeout: 1000 }
+    );
+  });
+
+  // --- pagination ---
+
+  it("does not show pagination when all results fit on one page", async () => {
+    mockApiFetch.mockResolvedValue(RESPONSE); // total: 2, PAGE_SIZE: 10
+    renderPage();
+    await waitFor(() => screen.getByTestId("tickets-table"));
+    expect(screen.queryByTestId("pagination")).not.toBeInTheDocument();
+  });
+
+  it("shows pagination with correct range text when results span multiple pages", async () => {
+    mockApiFetch.mockResolvedValue(RESPONSE_MULTIPAGE); // total: 15
+    renderPage();
+    await waitFor(() => screen.getByTestId("pagination"));
+    expect(screen.getByText("Showing 1–10 of 15")).toBeInTheDocument();
+  });
+
+  it("disables Previous on page 1", async () => {
+    mockApiFetch.mockResolvedValue(RESPONSE_MULTIPAGE);
+    renderPage();
+    await waitFor(() => screen.getByTestId("pagination"));
+    expect(screen.getByTestId("pagination-prev")).toBeDisabled();
+    expect(screen.getByTestId("pagination-next")).toBeEnabled();
+  });
+
+  it("fetches page 2 when Next is clicked", async () => {
+    mockApiFetch.mockResolvedValue(RESPONSE_MULTIPAGE);
+    renderPage();
+    await waitFor(() => screen.getByTestId("pagination"));
+
+    fireEvent.click(screen.getByTestId("pagination-next"));
+
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets?sortBy=createdAt&sortOrder=desc&page=2&pageSize=10"
+      )
+    );
+  });
+
+  it("disables Next on the last page", async () => {
+    // Page 2 of 2 (total 15, pageSize 10)
+    mockApiFetch
+      .mockResolvedValueOnce(RESPONSE_MULTIPAGE)
+      .mockResolvedValueOnce({ data: TICKETS, total: 15 });
+
+    renderPage();
+    await waitFor(() => screen.getByTestId("pagination"));
+
+    fireEvent.click(screen.getByTestId("pagination-next"));
+    await waitFor(() => screen.getByTestId("pagination"));
+
+    expect(screen.getByTestId("pagination-next")).toBeDisabled();
+    expect(screen.getByTestId("pagination-prev")).toBeEnabled();
+  });
+
+  it("resets to page 1 when a filter changes", async () => {
+    // Start on page 2
+    mockApiFetch
+      .mockResolvedValueOnce(RESPONSE_MULTIPAGE)   // page 1
+      .mockResolvedValueOnce({ data: TICKETS, total: 15 }) // page 2
+      .mockResolvedValue(RESPONSE);                // after filter change
+
+    renderPage();
+    await waitFor(() => screen.getByTestId("pagination"));
+
+    fireEvent.click(screen.getByTestId("pagination-next"));
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets?sortBy=createdAt&sortOrder=desc&page=2&pageSize=10"
+      )
+    );
+
+    fireEvent.change(screen.getByTestId("filter-status"), { target: { value: "open" } });
+
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets?sortBy=createdAt&sortOrder=desc&page=1&pageSize=10&status=open"
+      )
     );
   });
 });

@@ -6,7 +6,14 @@ import { requireAuth } from "../middleware/requireAuth";
 
 const router = Router();
 
-const sortableFields = ["id", "subject", "fromName", "status", "category", "createdAt"] as const;
+const sortableFields = [
+  "id",
+  "subject",
+  "fromName",
+  "status",
+  "category",
+  "createdAt",
+] as const;
 
 const listQuerySchema = z.object({
   sortBy: z.enum(sortableFields).optional().default("createdAt"),
@@ -14,6 +21,8 @@ const listQuerySchema = z.object({
   status: z.nativeEnum(TicketStatus).optional(),
   category: z.nativeEnum(TicketCategory).optional(),
   search: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(10),
 });
 
 router.get("/", requireAuth, async (req, res) => {
@@ -22,23 +31,32 @@ router.get("/", requireAuth, async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-  const { sortBy, sortOrder, status, category, search } = parsed.data;
+  const { sortBy, sortOrder, status, category, search, page, pageSize } =
+    parsed.data;
 
-  const tickets = await prisma.ticket.findMany({
-    where: {
-      ...(status && { status }),
-      ...(category && { category }),
-      ...(search && {
-        OR: [
-          { subject: { contains: search, mode: "insensitive" } },
-          { fromEmail: { contains: search, mode: "insensitive" } },
-          { fromName: { contains: search, mode: "insensitive" } },
-        ],
-      }),
-    },
-    orderBy: { [sortBy]: sortOrder },
-  });
-  res.json(tickets);
+  const where = {
+    ...(status && { status }),
+    ...(category && { category }),
+    ...(search && {
+      OR: [
+        { subject: { contains: search, mode: "insensitive" as const } },
+        { fromEmail: { contains: search, mode: "insensitive" as const } },
+        { fromName: { contains: search, mode: "insensitive" as const } },
+      ],
+    }),
+  };
+
+  const [data, total] = await prisma.$transaction([
+    prisma.ticket.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.ticket.count({ where }),
+  ]);
+
+  res.json({ data, total });
 });
 
 export default router;

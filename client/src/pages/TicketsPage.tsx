@@ -25,10 +25,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Ticket } from "@/types/tickets";
 import { TicketStatus, TicketCategory } from "@helpdesk/shared";
+
+const PAGE_SIZE = 10;
+
+type TicketListResponse = { data: Ticket[]; total: number };
 
 const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
   [TicketStatus.open]: "default",
@@ -105,30 +110,48 @@ export function TicketsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput), 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // Reset page when debounced search changes
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
   const sortBy = sorting[0]?.id ?? "createdAt";
   const sortOrder = sorting[0]?.desc !== false ? "desc" : "asc";
 
-  const params = new URLSearchParams({ sortBy, sortOrder });
+  const params = new URLSearchParams({
+    sortBy,
+    sortOrder,
+    page: String(page),
+    pageSize: String(PAGE_SIZE),
+  });
   if (statusFilter !== "all") params.set("status", statusFilter);
   if (categoryFilter !== "all") params.set("category", categoryFilter);
   if (search) params.set("search", search);
 
-  const { data: tickets, isPending, error } = useQuery({
-    queryKey: ["tickets", sortBy, sortOrder, statusFilter, categoryFilter, search],
-    queryFn: () => apiFetch<Ticket[]>(`/api/tickets?${params}`),
+  const { data: response, isPending, error } = useQuery({
+    queryKey: ["tickets", sortBy, sortOrder, statusFilter, categoryFilter, search, page],
+    queryFn: () => apiFetch<TicketListResponse>(`/api/tickets?${params}`),
   });
 
+  const tickets = response?.data ?? [];
+  const total = response?.total ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
   const table = useReactTable({
-    data: tickets ?? [],
+    data: tickets,
     columns,
     state: { sorting },
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      setSorting(updater);
+      setPage(1);
+    },
     getCoreRowModel: getCoreRowModel(),
     manualSorting: true,
   });
@@ -150,7 +173,11 @@ export function TicketsPage() {
           className="max-w-xs"
           data-testid="filter-search"
         />
-        <Select value={statusFilter} onValueChange={setStatusFilter} data-testid="filter-status">
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => { setStatusFilter(v); setPage(1); }}
+          data-testid="filter-status"
+        >
           <SelectTrigger className="w-36">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -161,7 +188,11 @@ export function TicketsPage() {
             <SelectItem value={TicketStatus.closed}>Closed</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter} data-testid="filter-category">
+        <Select
+          value={categoryFilter}
+          onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}
+          data-testid="filter-category"
+        >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
@@ -205,7 +236,7 @@ export function TicketsPage() {
           </TableBody>
         </Table>
       ) : (
-        tickets && (
+        response && (
           <Table data-testid="tickets-table">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -230,7 +261,7 @@ export function TicketsPage() {
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows.length === 0 && (
+              {tickets.length === 0 && (
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
@@ -255,6 +286,37 @@ export function TicketsPage() {
             </TableBody>
           </Table>
         )
+      )}
+
+      {response && totalPages > 1 && (
+        <div
+          className="flex items-center justify-between"
+          data-testid="pagination"
+        >
+          <p className="text-sm text-muted-foreground">
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 1}
+              data-testid="pagination-prev"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= totalPages}
+              data-testid="pagination-next"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
