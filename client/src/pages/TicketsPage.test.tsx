@@ -1,7 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, within, waitFor, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TicketsPage } from "./TicketsPage";
+
+vi.mock("@/components/ui/select", () => ({
+  Select: ({ value, onValueChange, children, "data-testid": testId }: any) => (
+    <select
+      value={value}
+      onChange={(e) => onValueChange(e.currentTarget.value)}
+      data-testid={testId}
+    >
+      {children}
+    </select>
+  ),
+  SelectTrigger: () => null,
+  SelectContent: ({ children }: any) => <>{children}</>,
+  SelectItem: ({ value, children }: any) => <option value={value}>{children}</option>,
+  SelectValue: () => null,
+}));
 
 vi.mock("@/lib/api");
 import { apiFetch } from "@/lib/api";
@@ -105,7 +122,7 @@ describe("TicketsPage", () => {
     mockApiFetch.mockResolvedValue(TICKETS);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
-    expect(screen.getByText("Technical")).toBeInTheDocument();
+    expect(within(screen.getByTestId("tickets-table")).getByText("Technical")).toBeInTheDocument();
   });
 
   it("renders a dash when category is null", async () => {
@@ -128,7 +145,7 @@ describe("TicketsPage", () => {
     mockApiFetch.mockResolvedValue([]);
     renderPage();
     await waitFor(() => screen.getByTestId("tickets-table"));
-    expect(screen.getByText("No tickets yet")).toBeInTheDocument();
+    expect(screen.getByText("No tickets found")).toBeInTheDocument();
   });
 
   it("shows error message when the request fails", async () => {
@@ -179,6 +196,73 @@ describe("TicketsPage", () => {
       expect(mockApiFetch).toHaveBeenCalledWith(
         "/api/tickets?sortBy=subject&sortOrder=desc"
       )
+    );
+  });
+
+  it("refetches with status param when a status is selected", async () => {
+    mockApiFetch.mockResolvedValue(TICKETS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("tickets-table"));
+
+    fireEvent.change(screen.getByTestId("filter-status"), { target: { value: "open" } });
+
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets?sortBy=createdAt&sortOrder=desc&status=open"
+      )
+    );
+  });
+
+  it("refetches with category param when a category is selected", async () => {
+    mockApiFetch.mockResolvedValue(TICKETS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("tickets-table"));
+
+    fireEvent.change(screen.getByTestId("filter-category"), {
+      target: { value: "technical_question" },
+    });
+
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets?sortBy=createdAt&sortOrder=desc&category=technical_question"
+      )
+    );
+  });
+
+  it("refetches with search param after debounce", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockResolvedValue(TICKETS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("tickets-table"));
+
+    await user.type(screen.getByTestId("filter-search"), "alice");
+
+    await waitFor(
+      () =>
+        expect(mockApiFetch).toHaveBeenCalledWith(
+          "/api/tickets?sortBy=createdAt&sortOrder=desc&search=alice"
+        ),
+      { timeout: 1000 }
+    );
+  });
+
+  it("combines active filters in the request", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockResolvedValue(TICKETS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("tickets-table"));
+
+    fireEvent.change(screen.getByTestId("filter-status"), { target: { value: "open" } });
+    await waitFor(() => screen.getByTestId("tickets-table"));
+
+    await user.type(screen.getByTestId("filter-search"), "crash");
+
+    await waitFor(
+      () =>
+        expect(mockApiFetch).toHaveBeenCalledWith(
+          "/api/tickets?sortBy=createdAt&sortOrder=desc&status=open&search=crash"
+        ),
+      { timeout: 1000 }
     );
   });
 });

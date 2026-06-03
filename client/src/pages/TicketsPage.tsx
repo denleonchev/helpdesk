@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -17,6 +17,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Ticket } from "@/types/tickets";
@@ -93,14 +101,27 @@ export function TicketsPage() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const sortBy = sorting[0]?.id ?? "createdAt";
   const sortOrder = sorting[0]?.desc !== false ? "desc" : "asc";
 
+  const params = new URLSearchParams({ sortBy, sortOrder });
+  if (statusFilter !== "all") params.set("status", statusFilter);
+  if (categoryFilter !== "all") params.set("category", categoryFilter);
+  if (search) params.set("search", search);
+
   const { data: tickets, isPending, error } = useQuery({
-    queryKey: ["tickets", sortBy, sortOrder],
-    queryFn: () =>
-      apiFetch<Ticket[]>(`/api/tickets?sortBy=${sortBy}&sortOrder=${sortOrder}`),
+    queryKey: ["tickets", sortBy, sortOrder, statusFilter, categoryFilter, search],
+    queryFn: () => apiFetch<Ticket[]>(`/api/tickets?${params}`),
   });
 
   const table = useReactTable({
@@ -119,6 +140,38 @@ export function TicketsPage() {
         <p className="text-sm text-muted-foreground">
           Incoming support requests
         </p>
+      </div>
+
+      <div className="flex gap-3">
+        <Input
+          placeholder="Search subject or sender…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="max-w-xs"
+          data-testid="filter-search"
+        />
+        <Select value={statusFilter} onValueChange={setStatusFilter} data-testid="filter-status">
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value={TicketStatus.open}>Open</SelectItem>
+            <SelectItem value={TicketStatus.resolved}>Resolved</SelectItem>
+            <SelectItem value={TicketStatus.closed}>Closed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter} data-testid="filter-category">
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            <SelectItem value={TicketCategory.general_question}>General</SelectItem>
+            <SelectItem value={TicketCategory.technical_question}>Technical</SelectItem>
+            <SelectItem value={TicketCategory.refund_request}>Refund</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {error && <p className="text-sm text-destructive">{error.message}</p>}
@@ -141,24 +194,12 @@ export function TicketsPage() {
           <TableBody>
             {Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={i}>
-                <TableCell>
-                  <Skeleton className="h-4 w-8" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-48" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-36" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-24" />
-                </TableCell>
+                <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -195,7 +236,7 @@ export function TicketsPage() {
                     colSpan={columns.length}
                     className="text-center text-muted-foreground py-8"
                   >
-                    No tickets yet
+                    No tickets found
                   </TableCell>
                 </TableRow>
               )}
