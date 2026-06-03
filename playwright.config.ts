@@ -9,7 +9,7 @@ const TEST_CLIENT_PORT = Number(process.env.TEST_CLIENT_PORT);
 
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL!;
 
-const serverUrl = `http://${TEST_HOST}:${TEST_SERVER_PORT}`;
+export const serverUrl = `http://${TEST_HOST}:${TEST_SERVER_PORT}`;
 const clientUrl = `http://${TEST_HOST}:${TEST_CLIENT_PORT}`;
 
 const serverEnv: Record<string, string> = {
@@ -20,6 +20,7 @@ const serverEnv: Record<string, string> = {
   ADMIN_EMAIL: process.env.ADMIN_EMAIL!,
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD!,
   TRUSTED_ORIGINS: clientUrl,
+  WEBHOOK_SECRET: process.env.WEBHOOK_SECRET!,
 };
 
 export default defineConfig({
