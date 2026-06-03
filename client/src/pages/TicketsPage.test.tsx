@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TicketsPage } from "./TicketsPage";
 
@@ -137,5 +137,48 @@ describe("TicketsPage", () => {
     await waitFor(() => expect(screen.getByText("Unauthorized")).toBeInTheDocument());
     expect(screen.queryByTestId("tickets-table")).not.toBeInTheDocument();
     expect(screen.queryByTestId("tickets-loading")).not.toBeInTheDocument();
+  });
+
+  it("fetches with createdAt desc by default", async () => {
+    mockApiFetch.mockResolvedValue(TICKETS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("tickets-table"));
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/api/tickets?sortBy=createdAt&sortOrder=desc"
+    );
+  });
+
+  it("refetches with new column and ascending order when a header is clicked", async () => {
+    mockApiFetch.mockResolvedValue(TICKETS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("tickets-table"));
+
+    fireEvent.click(screen.getByRole("button", { name: /Subject/ }));
+
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets?sortBy=subject&sortOrder=asc"
+      )
+    );
+  });
+
+  it("toggles to descending on second click of the same header", async () => {
+    mockApiFetch.mockResolvedValue(TICKETS);
+    renderPage();
+    await waitFor(() => screen.getByTestId("tickets-table"));
+
+    fireEvent.click(screen.getByRole("button", { name: /Subject/ }));
+    // wait for the data table to reappear (new queryKey triggers a loading cycle)
+    await waitFor(() => screen.getByTestId("tickets-table"));
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/api/tickets?sortBy=subject&sortOrder=asc"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Subject/ }));
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets?sortBy=subject&sortOrder=desc"
+      )
+    );
   });
 });
