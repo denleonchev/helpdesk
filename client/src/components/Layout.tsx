@@ -27,6 +27,14 @@ export function Layout() {
           >
             Dashboard
           </NavLink>
+          <NavLink
+            to="/tickets"
+            className={({ isActive }) =>
+              `text-sm ${isActive ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`
+            }
+          >
+            Tickets
+          </NavLink>
           {isAdmin && (
             <NavLink
               to="/users"

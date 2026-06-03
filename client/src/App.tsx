@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router";
 import { LoginPage } from "./pages/LoginPage";
 import { HomePage } from "./pages/HomePage";
 import { UsersPage } from "./pages/UsersPage";
+import { TicketsPage } from "./pages/TicketsPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 
@@ -11,6 +12,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/tickets" element={<TicketsPage />} />
           <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
             <Route path="/users" element={<UsersPage />} />
           </Route>
