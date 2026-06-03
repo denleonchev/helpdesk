@@ -74,6 +74,43 @@ test("pagination controls navigate between pages", async ({ page, request }) => 
   await expect(page.getByText(/Showing 11–11 of 11/)).toBeVisible();
 });
 
+test("admin can view ticket details by clicking a row", async ({ page, request }) => {
+  const runId = Date.now().toString();
+  await createTicket(request, {
+    from: "detail-test@example.com",
+    fromName: "Detail Customer",
+    subject: `Detail page test subject ${runId}`,
+    body: "This is the detail page test body.",
+  });
+
+  await loginAsAdmin(page);
+  await page.goto("/tickets");
+
+  const table = page.getByTestId("tickets-table");
+  await expect(table).toBeVisible();
+
+  // Click the row for our ticket to navigate to the detail page
+  await table
+    .getByRole("row")
+    .filter({ hasText: `Detail page test subject ${runId}` })
+    .click();
+
+  await page.waitForURL(/\/tickets\/[^/]+$/);
+
+  // Wait for the detail content to load
+  const detail = page.getByTestId("ticket-detail");
+  await expect(detail).toBeVisible();
+
+  // Verify subject, sender info, status, and body are all present
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    `Detail page test subject ${runId}`
+  );
+  await expect(detail.getByText("Detail Customer")).toBeVisible();
+  await expect(detail.getByText("detail-test@example.com")).toBeVisible();
+  await expect(detail.getByText("open")).toBeVisible();
+  await expect(detail.getByText("This is the detail page test body.")).toBeVisible();
+});
+
 test("clicking a column header re-sorts the tickets table", async ({ page, request }) => {
   await Promise.all([
     createTicket(request, {

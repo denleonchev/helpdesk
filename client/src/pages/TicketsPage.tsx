@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -9,6 +10,7 @@ import {
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { statusVariant, categoryLabel } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -35,17 +37,6 @@ const PAGE_SIZE = 10;
 
 type TicketListResponse = { data: Ticket[]; total: number };
 
-const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
-  [TicketStatus.open]: "default",
-  [TicketStatus.resolved]: "secondary",
-  [TicketStatus.closed]: "outline",
-};
-
-const categoryLabel: Record<string, string> = {
-  [TicketCategory.general_question]: "General",
-  [TicketCategory.technical_question]: "Technical",
-  [TicketCategory.refund_request]: "Refund",
-};
 
 const columnHelper = createColumnHelper<Ticket>();
 
@@ -103,6 +94,7 @@ function SortIcon({ sorted }: { sorted: false | "asc" | "desc" }) {
 }
 
 export function TicketsPage() {
+  const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
@@ -272,7 +264,11 @@ export function TicketsPage() {
                 </TableRow>
               )}
               {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/tickets/${row.original.id}`)}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(

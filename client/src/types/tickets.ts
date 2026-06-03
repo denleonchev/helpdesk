@@ -9,6 +9,7 @@ export type Ticket = {
   status: TicketStatus;
   category: TicketCategory | null;
   assignedToId: string | null;
+  assignedTo?: { id: string; name: string; email: string } | null;
   createdAt: string;
   updatedAt: string;
 };
