@@ -1,21 +1,40 @@
 import { Link, useParams } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { statusVariant, categoryLabel } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Ticket } from "@/types/tickets";
+
+type Agent = { id: string; name: string; email: string };
 
 export function TicketDetailPage() {
   const { id } = useParams();
   const numericId = Number(id);
   const invalid = !id || isNaN(numericId) || numericId <= 0;
+  const queryClient = useQueryClient();
 
   const { data: ticket, isPending, error } = useQuery({
     queryKey: ["tickets", numericId],
     queryFn: () => apiFetch<Ticket>(`/api/tickets/${numericId}`),
     enabled: !invalid,
+  });
+
+  const { data: agents = [] } = useQuery({
+    queryKey: ["users", "agents"],
+    queryFn: () => apiFetch<Agent[]>("/api/users/agents"),
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: (assignedToId: string | null) =>
+      apiFetch<Ticket>(`/api/tickets/${numericId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignedToId }),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tickets", numericId] }),
   });
 
   return (
@@ -87,14 +106,23 @@ export function TicketDetailPage() {
                 <div>
                   <dt className="text-muted-foreground mb-1">Assigned To</dt>
                   <dd>
-                    {ticket.assignedTo ? (
-                      <>
-                        <div className="font-medium">{ticket.assignedTo.name}</div>
-                        <div className="text-muted-foreground">{ticket.assignedTo.email}</div>
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground">Unassigned</span>
-                    )}
+                    <Select
+                      value={ticket.assignedToId ?? "__unassigned__"}
+                      onValueChange={(val) => assignMutation.mutate(val === "__unassigned__" ? null : val)}
+                      disabled={assignMutation.isPending}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Unassigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                        {agents.map((agent) => (
+                          <SelectItem key={agent.id} value={agent.id}>
+                            {agent.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </dd>
                 </div>
                 <div>

@@ -8,3 +8,9 @@ export const inboundEmailSchema = z.object({
 });
 
 export type InboundEmailInput = z.infer<typeof inboundEmailSchema>;
+
+export const updateTicketSchema = z.object({
+  assignedToId: z.string().nullable().optional(),
+});
+
+export type UpdateTicketInput = z.infer<typeof updateTicketSchema>;

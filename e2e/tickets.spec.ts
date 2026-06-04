@@ -111,6 +111,53 @@ test("admin can view ticket details by clicking a row", async ({ page, request }
   await expect(detail.getByText("This is the detail page test body.")).toBeVisible();
 });
 
+test("admin can assign a ticket to an agent", async ({ page, request }) => {
+  const runId = Date.now().toString();
+  await createTicket(request, {
+    from: "assign-test@example.com",
+    fromName: "Assign Customer",
+    subject: `Assign test subject ${runId}`,
+    body: "Please assign this ticket to someone.",
+  });
+
+  await loginAsAdmin(page);
+  await page.goto("/tickets");
+
+  const table = page.getByTestId("tickets-table");
+  await expect(table).toBeVisible();
+
+  await table
+    .getByRole("row")
+    .filter({ hasText: `Assign test subject ${runId}` })
+    .click();
+
+  await page.waitForURL(/\/tickets\/\d+$/);
+
+  const detail = page.getByTestId("ticket-detail");
+  await expect(detail).toBeVisible();
+
+  // Before assignment the combobox should show "Unassigned"
+  const assignCombobox = page.getByRole("combobox");
+  await expect(assignCombobox).toHaveText("Unassigned");
+
+  // Open the dropdown and select the seeded agent
+  await assignCombobox.click();
+  await page.getByRole("option", { name: "Agent" }).click();
+
+  // After selection the combobox reflects the new assignment without a reload
+  await expect(assignCombobox).toHaveText("Agent");
+
+  // Navigate away and back to confirm the assignment was persisted
+  await page.goto("/tickets");
+  await table
+    .getByRole("row")
+    .filter({ hasText: `Assign test subject ${runId}` })
+    .click();
+  await page.waitForURL(/\/tickets\/\d+$/);
+  await expect(page.getByTestId("ticket-detail")).toBeVisible();
+  await expect(page.getByRole("combobox")).toHaveText("Agent");
+});
+
 test("clicking a column header re-sorts the tickets table", async ({ page, request }) => {
   await Promise.all([
     createTicket(request, {
