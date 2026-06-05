@@ -180,6 +180,12 @@ test("clicking a column header re-sorts the tickets table", async ({ page, reque
   const table = page.getByTestId("tickets-table");
   await expect(table).toBeVisible();
 
+  // Filter to the two test tickets so pagination doesn't hide either one.
+  // Wait for the count indicator to confirm the filter has fully applied (debounce).
+  await page.getByTestId("filter-search").fill("sort test subject");
+  // 1 header + 2 data rows confirms the debounce has fired and only our tickets are shown.
+  await expect(table.getByRole("row")).toHaveCount(3);
+
   await page.getByRole("button", { name: "Subject" }).click();
   await expect(table).toBeVisible();
 

@@ -10,7 +10,7 @@ import ticketsRouter from "./routes/tickets";
 import webhooksRouter from "./routes/webhooks";
 
 const app = express();
-const PORT = process.env.PORT ?? 3000;
+const PORT = new URL(process.env.BETTER_AUTH_URL!).port;
 
 // Trust the first proxy hop so req.ip reflects the real client IP behind a reverse proxy
 if (process.env.NODE_ENV === "production") {
