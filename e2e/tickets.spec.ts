@@ -137,7 +137,7 @@ test("admin can assign a ticket to an agent", async ({ page, request }) => {
   await expect(detail).toBeVisible();
 
   // Before assignment the combobox should show "Unassigned"
-  const assignCombobox = page.getByRole("combobox");
+  const assignCombobox = page.getByTestId("assign-select");
   await expect(assignCombobox).toHaveText("Unassigned");
 
   // Open the dropdown and select the seeded agent
@@ -155,7 +155,96 @@ test("admin can assign a ticket to an agent", async ({ page, request }) => {
     .click();
   await page.waitForURL(/\/tickets\/\d+$/);
   await expect(page.getByTestId("ticket-detail")).toBeVisible();
-  await expect(page.getByRole("combobox")).toHaveText("Agent");
+  await expect(page.getByTestId("assign-select")).toHaveText("Agent");
+});
+
+test("admin can update ticket status from open to resolved", async ({ page, request }) => {
+  const runId = Date.now().toString();
+  await createTicket(request, {
+    from: "status-test@example.com",
+    fromName: "Status Customer",
+    subject: `Status update test ${runId}`,
+    body: "Please change the status of this ticket.",
+  });
+
+  await loginAsAdmin(page);
+  await page.goto("/tickets");
+
+  const table = page.getByTestId("tickets-table");
+  await expect(table).toBeVisible();
+
+  await table
+    .getByRole("row")
+    .filter({ hasText: `Status update test ${runId}` })
+    .click();
+
+  await page.waitForURL(/\/tickets\/\d+$/);
+
+  const detail = page.getByTestId("ticket-detail");
+  await expect(detail).toBeVisible();
+
+  const statusCombobox = detail.getByTestId("status-select");
+  await expect(statusCombobox).toHaveText("open");
+
+  await statusCombobox.click();
+  await page.getByRole("option", { name: "resolved" }).click();
+
+  await expect(statusCombobox).toHaveText("resolved");
+
+  // Navigate away and back to confirm the change was persisted
+  await page.goto("/tickets");
+  await table
+    .getByRole("row")
+    .filter({ hasText: `Status update test ${runId}` })
+    .click();
+  await page.waitForURL(/\/tickets\/\d+$/);
+  await expect(page.getByTestId("ticket-detail")).toBeVisible();
+  await expect(page.getByTestId("status-select")).toHaveText("resolved");
+});
+
+test("admin can update ticket category from None to General", async ({ page, request }) => {
+  const runId = Date.now().toString();
+  await createTicket(request, {
+    from: "category-test@example.com",
+    fromName: "Category Customer",
+    subject: `Category update test ${runId}`,
+    body: "Please categorise this ticket.",
+  });
+
+  await loginAsAdmin(page);
+  await page.goto("/tickets");
+
+  const table = page.getByTestId("tickets-table");
+  await expect(table).toBeVisible();
+
+  await table
+    .getByRole("row")
+    .filter({ hasText: `Category update test ${runId}` })
+    .click();
+
+  await page.waitForURL(/\/tickets\/\d+$/);
+
+  const detail = page.getByTestId("ticket-detail");
+  await expect(detail).toBeVisible();
+
+  const categoryCombobox = detail.getByTestId("category-select");
+  await expect(categoryCombobox).toHaveText("None");
+
+  await categoryCombobox.click();
+  await page.getByRole("option", { name: "General" }).click();
+
+  await expect(categoryCombobox).toHaveText("General");
+
+  // Navigate away and back to confirm the change was persisted
+  await page.goto("/tickets");
+  await table
+    .getByRole("row")
+    .filter({ hasText: `Category update test ${runId}` })
+    .click();
+  await page.waitForURL(/\/tickets\/\d+$/);
+  await expect(page.getByTestId("ticket-detail")).toBeVisible();
+
+  await expect(page.getByTestId("category-select")).toHaveText("General");
 });
 
 test("clicking a column header re-sorts the tickets table", async ({ page, request }) => {

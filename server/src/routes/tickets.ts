@@ -93,7 +93,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
     return;
   }
 
-  const { assignedToId } = bodyParsed.data;
+  const { assignedToId, status, category } = bodyParsed.data;
 
   if (assignedToId != null) {
     const agent = await prisma.user.findUnique({
@@ -113,7 +113,11 @@ router.patch("/:id", requireAuth, async (req, res) => {
 
   const ticket = await prisma.ticket.update({
     where: { id: idParsed.data },
-    data: { assignedToId: assignedToId ?? null },
+    data: {
+      ...(assignedToId !== undefined && { assignedToId: assignedToId ?? null }),
+      ...(status !== undefined && { status }),
+      ...(category !== undefined && { category: category ?? null }),
+    },
     include: { assignedTo: true },
   });
 

@@ -135,7 +135,7 @@ describe("assign feature", () => {
     });
     renderAt("/tickets/1");
     await waitFor(() => screen.getByTestId("ticket-detail"));
-    expect(screen.getByRole("combobox")).toHaveTextContent("Unassigned");
+    expect(screen.getByTestId("assign-select")).toHaveTextContent("Unassigned");
   });
 
   it("populates the dropdown with all agent options", async () => {
@@ -146,7 +146,7 @@ describe("assign feature", () => {
     });
     renderAt("/tickets/1");
     await waitFor(() => screen.getByTestId("ticket-detail"));
-    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByTestId("assign-select"));
     expect(screen.getByRole("option", { name: "Unassigned" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Bob Agent" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Carol Agent" })).toBeInTheDocument();
@@ -161,7 +161,7 @@ describe("assign feature", () => {
     });
     renderAt("/tickets/1");
     await waitFor(() => screen.getByTestId("ticket-detail"));
-    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByTestId("assign-select"));
     await user.click(screen.getByRole("option", { name: "Bob Agent" }));
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith(
@@ -183,7 +183,7 @@ describe("assign feature", () => {
     });
     renderAt("/tickets/1");
     await waitFor(() => screen.getByTestId("ticket-detail"));
-    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByTestId("assign-select"));
     await user.click(screen.getByRole("option", { name: "Unassigned" }));
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith(
@@ -207,10 +207,80 @@ describe("assign feature", () => {
     });
     renderAt("/tickets/1");
     await waitFor(() => screen.getByTestId("ticket-detail"));
-    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByTestId("assign-select"));
     await user.click(screen.getByRole("option", { name: "Bob Agent" }));
-    await waitFor(() => expect(screen.getByRole("combobox")).toBeDisabled());
+    await waitFor(() => expect(screen.getByTestId("assign-select")).toBeDisabled());
     resolvePatch({ ...TICKET, assignedToId: "agent-1" });
-    await waitFor(() => expect(screen.getByRole("combobox")).not.toBeDisabled());
+    await waitFor(() => expect(screen.getByTestId("assign-select")).not.toBeDisabled());
+  });
+});
+
+describe("status update", () => {
+  it("calls PATCH with the new status when a status option is selected", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
+      if (url === "/api/users/agents") return Promise.resolve([]);
+      if (opts?.method === "PATCH") return Promise.resolve({ ...TICKET, status: "resolved" as const });
+      return Promise.resolve(TICKET);
+    });
+    renderAt("/tickets/1");
+    await waitFor(() => screen.getByTestId("ticket-detail"));
+    await user.click(screen.getByTestId("status-select"));
+    await user.click(screen.getByRole("option", { name: "resolved" }));
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets/1",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ status: "resolved" }),
+        })
+      )
+    );
+  });
+});
+
+describe("category update", () => {
+  it("calls PATCH with the new category when a category option is selected", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
+      if (url === "/api/users/agents") return Promise.resolve([]);
+      if (opts?.method === "PATCH") return Promise.resolve({ ...TICKET, category: "general_question" as const });
+      return Promise.resolve(TICKET);
+    });
+    renderAt("/tickets/1");
+    await waitFor(() => screen.getByTestId("ticket-detail"));
+    await user.click(screen.getByTestId("category-select"));
+    await user.click(screen.getByRole("option", { name: "General" }));
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets/1",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ category: "general_question" }),
+        })
+      )
+    );
+  });
+
+  it("calls PATCH with null when None is selected", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
+      if (url === "/api/users/agents") return Promise.resolve([]);
+      if (opts?.method === "PATCH") return Promise.resolve({ ...TICKET, category: null });
+      return Promise.resolve({ ...TICKET, category: "general_question" as const });
+    });
+    renderAt("/tickets/1");
+    await waitFor(() => screen.getByTestId("ticket-detail"));
+    await user.click(screen.getByTestId("category-select"));
+    await user.click(screen.getByRole("option", { name: "None" }));
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets/1",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ category: null }),
+        })
+      )
+    );
   });
 });

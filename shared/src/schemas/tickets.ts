@@ -11,6 +11,8 @@ export type InboundEmailInput = z.infer<typeof inboundEmailSchema>;
 
 export const updateTicketSchema = z.object({
   assignedToId: z.string().nullable().optional(),
+  status: z.enum(["open", "resolved", "closed"]).optional(),
+  category: z.enum(["general_question", "technical_question", "refund_request"]).nullable().optional(),
 });
 
 export type UpdateTicketInput = z.infer<typeof updateTicketSchema>;
