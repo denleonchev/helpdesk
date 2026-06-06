@@ -5,6 +5,8 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { auth } from "./lib/auth";
+import boss from "./lib/boss";
+import { JOB_NAME, classifyTicketWorker } from "./workers/classifyTicket";
 import usersRouter from "./routes/users";
 import ticketsRouter from "./routes/tickets";
 import repliesRouter from "./routes/replies";
@@ -53,6 +55,9 @@ app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+boss.start().then(() => {
+  boss.work(JOB_NAME, classifyTicketWorker);
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
 });
