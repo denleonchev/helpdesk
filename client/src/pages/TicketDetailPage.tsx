@@ -5,6 +5,7 @@ import { categoryLabel } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ReplyThread } from "@/components/ReplyThread";
 import type { Ticket } from "@/types/tickets";
 import { TicketStatus, TicketCategory } from "@helpdesk/shared";
 import type { UpdateTicketInput } from "@helpdesk/shared";
@@ -169,6 +170,8 @@ export function TicketDetailPage() {
               <p className="text-sm whitespace-pre-wrap">{ticket.body}</p>
             </CardContent>
           </Card>
+
+          <ReplyThread ticketId={numericId} fromName={ticket.fromName} agents={agents} />
         </div>
       ) : null}
     </div>

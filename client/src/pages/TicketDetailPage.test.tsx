@@ -40,9 +40,11 @@ const TICKET = {
 };
 
 function mockTicket(data: typeof TICKET = TICKET) {
-  mockApiFetch.mockImplementation((url: string) =>
-    url === "/api/users/agents" ? Promise.resolve([]) : Promise.resolve(data)
-  );
+  mockApiFetch.mockImplementation((url: string) => {
+    if (url === "/api/users/agents") return Promise.resolve([]);
+    if (url.endsWith("/replies")) return Promise.resolve([]);
+    return Promise.resolve(data);
+  });
 }
 
 beforeEach(() => {
@@ -131,6 +133,7 @@ describe("assign feature", () => {
   it("shows Unassigned in the trigger when ticket has no assignee", async () => {
     mockApiFetch.mockImplementation((url: string) => {
       if (url === "/api/users/agents") return Promise.resolve(AGENTS);
+      if (url.endsWith("/replies")) return Promise.resolve([]);
       return Promise.resolve(TICKET);
     });
     renderAt("/tickets/1");
@@ -142,6 +145,7 @@ describe("assign feature", () => {
     const user = userEvent.setup();
     mockApiFetch.mockImplementation((url: string) => {
       if (url === "/api/users/agents") return Promise.resolve(AGENTS);
+      if (url.endsWith("/replies")) return Promise.resolve([]);
       return Promise.resolve(TICKET);
     });
     renderAt("/tickets/1");
@@ -157,6 +161,7 @@ describe("assign feature", () => {
     mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
       if (url === "/api/users/agents") return Promise.resolve(AGENTS);
       if (opts?.method === "PATCH") return Promise.resolve({ ...TICKET, assignedToId: "agent-1" });
+      if (url.endsWith("/replies")) return Promise.resolve([]);
       return Promise.resolve(TICKET);
     });
     renderAt("/tickets/1");
@@ -179,6 +184,7 @@ describe("assign feature", () => {
     mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
       if (url === "/api/users/agents") return Promise.resolve(AGENTS);
       if (opts?.method === "PATCH") return Promise.resolve(TICKET);
+      if (url.endsWith("/replies")) return Promise.resolve([]);
       return Promise.resolve({ ...TICKET, assignedToId: "agent-1" });
     });
     renderAt("/tickets/1");
@@ -203,6 +209,7 @@ describe("assign feature", () => {
     mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
       if (url === "/api/users/agents") return Promise.resolve(AGENTS);
       if (opts?.method === "PATCH") return patchPromise;
+      if (url.endsWith("/replies")) return Promise.resolve([]);
       return Promise.resolve(TICKET);
     });
     renderAt("/tickets/1");
@@ -221,6 +228,7 @@ describe("status update", () => {
     mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
       if (url === "/api/users/agents") return Promise.resolve([]);
       if (opts?.method === "PATCH") return Promise.resolve({ ...TICKET, status: "resolved" as const });
+      if (url.endsWith("/replies")) return Promise.resolve([]);
       return Promise.resolve(TICKET);
     });
     renderAt("/tickets/1");
@@ -245,6 +253,7 @@ describe("category update", () => {
     mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
       if (url === "/api/users/agents") return Promise.resolve([]);
       if (opts?.method === "PATCH") return Promise.resolve({ ...TICKET, category: "general_question" as const });
+      if (url.endsWith("/replies")) return Promise.resolve([]);
       return Promise.resolve(TICKET);
     });
     renderAt("/tickets/1");
@@ -267,6 +276,7 @@ describe("category update", () => {
     mockApiFetch.mockImplementation((url: string, opts?: RequestInit) => {
       if (url === "/api/users/agents") return Promise.resolve([]);
       if (opts?.method === "PATCH") return Promise.resolve({ ...TICKET, category: null });
+      if (url.endsWith("/replies")) return Promise.resolve([]);
       return Promise.resolve({ ...TICKET, category: "general_question" as const });
     });
     renderAt("/tickets/1");

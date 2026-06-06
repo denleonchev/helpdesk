@@ -11,3 +11,9 @@ export const TicketCategory = {
   refund_request: "refund_request",
 } as const;
 export type TicketCategory = (typeof TicketCategory)[keyof typeof TicketCategory];
+
+export const ReplySenderType = {
+  agent: "agent",
+  customer: "customer",
+} as const;
+export type ReplySenderType = (typeof ReplySenderType)[keyof typeof ReplySenderType];

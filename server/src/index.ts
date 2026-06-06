@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import { auth } from "./lib/auth";
 import usersRouter from "./routes/users";
 import ticketsRouter from "./routes/tickets";
+import repliesRouter from "./routes/replies";
 import webhooksRouter from "./routes/webhooks";
 
 const app = express();
@@ -45,6 +46,7 @@ app.use(express.json());
 
 app.use("/api/users", usersRouter);
 app.use("/api/tickets", ticketsRouter);
+app.use("/api/tickets/:id/replies", repliesRouter);
 app.use("/api/webhooks", webhooksRouter);
 
 app.get("/api/health", (_req: Request, res: Response) => {

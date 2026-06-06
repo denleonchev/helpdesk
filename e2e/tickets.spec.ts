@@ -247,6 +247,56 @@ test("admin can update ticket category from None to General", async ({ page, req
   await expect(page.getByTestId("category-select")).toHaveText("General");
 });
 
+test("admin can reply to a ticket and sees the reply in the thread", async ({ page, request }) => {
+  const runId = Date.now().toString();
+  await createTicket(request, {
+    from: "reply-test@example.com",
+    fromName: "Reply Customer",
+    subject: `Reply test subject ${runId}`,
+    body: "Please respond to this ticket.",
+  });
+
+  await loginAsAdmin(page);
+  await page.goto("/tickets");
+
+  const table = page.getByTestId("tickets-table");
+  await expect(table).toBeVisible();
+
+  await table
+    .getByRole("row")
+    .filter({ hasText: `Reply test subject ${runId}` })
+    .click();
+
+  await page.waitForURL(/\/tickets\/\d+$/);
+
+  const detail = page.getByTestId("ticket-detail");
+  await expect(detail).toBeVisible();
+
+  // Before any reply the thread should show the empty state
+  const replyThread = page.getByTestId("reply-thread");
+  await expect(replyThread).toBeVisible();
+  await expect(replyThread).toContainText("No replies yet.");
+
+  // Submit a reply via the reply form
+  const replyMessage = `Test reply content ${runId}`;
+  await page.getByTestId("reply-form").getByPlaceholder("Write a reply...").fill(replyMessage);
+  await page.getByTestId("reply-form").getByRole("button", { name: "Send Reply" }).click();
+
+  // The reply should appear in the thread without a reload
+  await expect(replyThread).toContainText(replyMessage);
+
+  // Capture the current URL so we can navigate back to the same ticket
+  const ticketUrl = page.url();
+
+  // Navigate away then return to verify the reply was persisted
+  await page.goto("/tickets");
+  await expect(page.getByTestId("tickets-table")).toBeVisible();
+  await page.goto(ticketUrl);
+  await page.waitForURL(/\/tickets\/\d+$/);
+  await expect(page.getByTestId("ticket-detail")).toBeVisible();
+  await expect(page.getByTestId("reply-thread")).toContainText(replyMessage);
+});
+
 test("clicking a column header re-sorts the tickets table", async ({ page, request }) => {
   await Promise.all([
     createTicket(request, {

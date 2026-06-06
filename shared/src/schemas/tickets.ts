@@ -16,3 +16,10 @@ export const updateTicketSchema = z.object({
 });
 
 export type UpdateTicketInput = z.infer<typeof updateTicketSchema>;
+
+export const createReplySchema = z.object({
+  content: z.string().min(1),
+  senderType: z.enum(["agent", "customer"]),
+});
+
+export type CreateReplyInput = z.infer<typeof createReplySchema>;
