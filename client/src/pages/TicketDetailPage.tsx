@@ -6,6 +6,7 @@ import { TicketDetailSkeleton } from "@/components/TicketDetailPage/TicketDetail
 import { TicketDetailError } from "@/components/TicketDetailPage/TicketDetailError";
 import { TicketEditableDetails } from "@/components/TicketDetailPage/TicketEditableDetails";
 import { TicketMessage } from "@/components/TicketDetailPage/TicketMessage";
+import { TicketSummary } from "@/components/TicketDetailPage/TicketSummary";
 import { ReplyThread } from "@/components/TicketDetailPage/ReplyThread";
 import type { Ticket } from "@/types/tickets";
 
@@ -54,6 +55,7 @@ export function TicketDetailPage() {
         <h1 className="text-2xl font-semibold">{ticket.subject}</h1>
         <TicketEditableDetails ticketId={numericId} ticket={ticket} agents={agents} />
         <TicketMessage body={ticket.body} />
+        <TicketSummary ticketId={numericId} />
         <ReplyThread ticketId={numericId} fromName={ticket.fromName} agents={agents} />
       </div>
     </div>

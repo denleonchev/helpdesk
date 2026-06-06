@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
+import { google } from "@ai-sdk/google";
+import { generateText } from "ai";
 import prisma from "../lib/prisma";
 import { TicketStatus, TicketCategory, Role } from "../generated/prisma/enums";
 import { requireAuth } from "../middleware/requireAuth";
@@ -122,6 +124,40 @@ router.patch("/:id", requireAuth, async (req, res) => {
   });
 
   res.json(ticket);
+});
+
+router.post("/:id/summarize", requireAuth, async (req, res) => {
+  const parsed = z.coerce.number().int().positive().safeParse(req.params.id);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
+    return;
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: parsed.data },
+    include: {
+      replies: { orderBy: { createdAt: "asc" } },
+    },
+  });
+
+  if (!ticket) {
+    res.status(404).json({ error: "Ticket not found" });
+    return;
+  }
+
+  const conversation = [
+    `Customer (${ticket.fromName}): ${ticket.body}`,
+    ...ticket.replies.map((r) =>
+      `${r.senderType === "agent" ? "Agent" : `Customer (${ticket.fromName})`}: ${r.content}`
+    ),
+  ].join("\n\n");
+
+  const { text } = await generateText({
+    model: google("gemini-2.5-flash"),
+    prompt: `Summarize the following support ticket conversation in 2-3 concise sentences. Focus on the customer's issue and the current resolution status.\n\nSubject: ${ticket.subject}\n\n${conversation}`,
+  });
+
+  res.json({ summary: text });
 });
 
 export default router;
