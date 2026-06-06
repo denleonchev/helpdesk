@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 export const inboundEmailSchema = z.object({
-  from: z.email(),
-  fromName: z.string().min(1),
-  subject: z.string().min(1),
-  body: z.string().min(1),
+  from: z.email().max(254),        // RFC 5321 max email address length
+  fromName: z.string().min(1).max(255),
+  subject: z.string().min(1).max(998), // RFC 2822 max subject line length
+  body: z.string().min(1).max(100_000),
 });
 
 export type InboundEmailInput = z.infer<typeof inboundEmailSchema>;

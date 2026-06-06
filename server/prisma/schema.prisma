@@ -46,10 +46,10 @@ model User {
 
 model Ticket {
   id           Int            @id @default(autoincrement())
-  subject      String
-  body         String
-  fromEmail    String
-  fromName     String
+  subject      String         @db.VarChar(998)
+  body         String         @db.VarChar(100000)
+  fromEmail    String         @db.VarChar(254)
+  fromName     String         @db.VarChar(255)
   status       TicketStatus
   category     TicketCategory?
   assignedToId String?
