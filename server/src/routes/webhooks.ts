@@ -1,8 +1,11 @@
 import { Router } from "express";
+import sanitizeHtml from "sanitize-html";
 import prisma from "../lib/prisma";
 import { TicketStatus } from "../generated/prisma/enums";
 import { inboundEmailSchema } from "@helpdesk/shared";
 import { requireWebhookSecret } from "../middleware/requireWebhookSecret";
+
+const sanitize = (s: string) => sanitizeHtml(s, { allowedTags: [], allowedAttributes: {} });
 
 const router = Router();
 
@@ -17,10 +20,10 @@ router.post("/email", requireWebhookSecret, async (req, res) => {
 
   const ticket = await prisma.ticket.create({
     data: {
-      subject,
-      body,
+      subject: sanitize(subject),
+      body: sanitize(body),
       fromEmail: from,
-      fromName,
+      fromName: sanitize(fromName),
       status: TicketStatus.open,
     },
   });
