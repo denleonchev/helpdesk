@@ -112,3 +112,101 @@ describe("ReplyForm", () => {
     );
   });
 });
+
+describe("Polish button", () => {
+  it("is disabled when the textarea is empty", () => {
+    renderComponent();
+    expect(screen.getByRole("button", { name: "Polish" })).toBeDisabled();
+  });
+
+  it("is enabled when the textarea has content", async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    await user.type(screen.getByPlaceholderText("Write a reply..."), "Hello");
+    expect(screen.getByRole("button", { name: "Polish" })).not.toBeDisabled();
+  });
+
+  it("calls POST /api/ai/polish with the current content", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockResolvedValue({ content: "Polished text" });
+    renderComponent();
+
+    await user.type(screen.getByPlaceholderText("Write a reply..."), "Hello");
+    await user.click(screen.getByRole("button", { name: "Polish" }));
+
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/tickets/1/replies/polish",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ content: "Hello" }),
+        })
+      )
+    );
+  });
+
+  it("replaces textarea content with the polished text on success", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockResolvedValue({ content: "Polished text" });
+    renderComponent();
+
+    const textarea = screen.getByPlaceholderText("Write a reply...");
+    await user.type(textarea, "Hello");
+    await user.click(screen.getByRole("button", { name: "Polish" }));
+
+    await waitFor(() => expect(textarea).toHaveValue("Polished text"));
+  });
+
+  it("shows 'Polishing…' while the request is in flight", async () => {
+    const user = userEvent.setup();
+    let resolvePolish!: (val: unknown) => void;
+    mockApiFetch.mockReturnValue(new Promise((res) => { resolvePolish = res; }));
+    renderComponent();
+
+    await user.type(screen.getByPlaceholderText("Write a reply..."), "Hello");
+    await user.click(screen.getByRole("button", { name: "Polish" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Polishing…" })).toBeInTheDocument()
+    );
+
+    resolvePolish({ content: "Polished text" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Polish" })).toBeInTheDocument()
+    );
+  });
+
+  it("disables both buttons while polishing", async () => {
+    const user = userEvent.setup();
+    let resolvePolish!: (val: unknown) => void;
+    mockApiFetch.mockReturnValue(new Promise((res) => { resolvePolish = res; }));
+    renderComponent();
+
+    await user.type(screen.getByPlaceholderText("Write a reply..."), "Hello");
+    await user.click(screen.getByRole("button", { name: "Polish" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Send Reply" })).toBeDisabled()
+    );
+    expect(screen.getByRole("button", { name: "Polishing…" })).toBeDisabled();
+
+    resolvePolish({ content: "Polished text" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Send Reply" })).not.toBeDisabled()
+    );
+  });
+
+  it("shows an error message when polishing fails", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockRejectedValue(new Error("AI unavailable"));
+    renderComponent();
+
+    await user.type(screen.getByPlaceholderText("Write a reply..."), "Hello");
+    await user.click(screen.getByRole("button", { name: "Polish" }));
+
+    await waitFor(() =>
+      expect(screen.getByText("AI unavailable")).toBeInTheDocument()
+    );
+  });
+});

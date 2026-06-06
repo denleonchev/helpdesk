@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiFetch } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,9 @@ export function ReplyForm({ ticketId, onSuccess }: Props) {
     defaultValues: { content: "", senderType: "agent" },
   });
 
-  const mutation = useMutation({
+  const content = useWatch({ control: form.control, name: "content" });
+
+  const sendMutation = useMutation({
     mutationFn: (data: CreateReplyInput) =>
       apiFetch<Reply>(`/api/tickets/${ticketId}/replies`, {
         method: "POST",
@@ -33,6 +35,18 @@ export function ReplyForm({ ticketId, onSuccess }: Props) {
     },
   });
 
+  const polishMutation = useMutation({
+    mutationFn: (text: string) =>
+      apiFetch<{ content: string }>(`/api/tickets/${ticketId}/replies/polish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text }),
+      }),
+    onSuccess: ({ content }) => form.setValue("content", content),
+  });
+
+  const isBusy = sendMutation.isPending || polishMutation.isPending;
+
   return (
     <Card data-testid="reply-form">
       <CardHeader>
@@ -40,18 +54,31 @@ export function ReplyForm({ ticketId, onSuccess }: Props) {
       </CardHeader>
       <CardContent>
         <form
-          onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
+          onSubmit={form.handleSubmit((data) => sendMutation.mutate(data))}
           className="space-y-3"
         >
           <Textarea
             placeholder="Write a reply..."
             {...form.register("content")}
           />
-          <Button type="submit" disabled={mutation.isPending}>
-            Send Reply
-          </Button>
-          {mutation.isError && (
-            <p className="text-sm text-destructive">{mutation.error.message}</p>
+          <div className="flex gap-2">
+            <Button type="submit" disabled={isBusy}>
+              Send Reply
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isBusy || !content?.trim()}
+              onClick={() => polishMutation.mutate(content)}
+            >
+              {polishMutation.isPending ? "Polishing…" : "Polish"}
+            </Button>
+          </div>
+          {sendMutation.isError && (
+            <p className="text-sm text-destructive">{sendMutation.error.message}</p>
+          )}
+          {polishMutation.isError && (
+            <p className="text-sm text-destructive">{polishMutation.error.message}</p>
           )}
         </form>
       </CardContent>
