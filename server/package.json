@@ -2,6 +2,7 @@
   "name": "server",
   "private": true,
   "scripts": {
+    "predev": "fuser -k 3000/tcp || true",
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "seed": "tsx prisma/seed.ts"
