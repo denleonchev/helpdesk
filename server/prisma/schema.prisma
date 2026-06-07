@@ -13,6 +13,7 @@ enum Role {
 }
 
 enum TicketStatus {
+  new
   open
   processing
   resolved

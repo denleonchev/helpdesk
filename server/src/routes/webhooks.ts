@@ -27,7 +27,7 @@ router.post("/email", requireWebhookSecret, async (req, res) => {
       body: sanitize(body),
       fromEmail: from,
       fromName: sanitize(fromName),
-      status: TicketStatus.open,
+      status: TicketStatus.new,
     },
   });
 

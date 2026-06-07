@@ -7,6 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
+  [TicketStatus.new]: "secondary",
   [TicketStatus.open]: "default",
   [TicketStatus.processing]: "secondary",
   [TicketStatus.resolved]: "outline",

@@ -175,6 +175,7 @@ export function TicketsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value={TicketStatus.new}>New</SelectItem>
             <SelectItem value={TicketStatus.open}>Open</SelectItem>
             <SelectItem value={TicketStatus.processing}>Processing</SelectItem>
             <SelectItem value={TicketStatus.resolved}>Resolved</SelectItem>
