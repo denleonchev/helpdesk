@@ -1,5 +1,6 @@
 export const TicketStatus = {
   open: "open",
+  processing: "processing",
   resolved: "resolved",
   closed: "closed",
 } as const;

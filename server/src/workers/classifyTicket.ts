@@ -1,5 +1,5 @@
 import type { Job } from "pg-boss";
-import { google } from "@ai-sdk/google";
+import { groq } from "@ai-sdk/groq";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import prisma from "../lib/prisma";
@@ -14,13 +14,16 @@ const categorySchema = z.object({
   category: z.enum(TicketCategory),
 });
 
-export async function classifyTicketWorker(job: Job<JobData>) {
+export async function classifyTicketWorker(jobs: Job<JobData>[]) {
+  for (const job of jobs) {
   const { id, subject, body } = job.data;
 
-  const { output } = await generateText({
-    model: google("gemini-2.5-flash"),
-    output: Output.object({ schema: categorySchema }),
-    prompt: `Classify this support ticket into exactly one category.
+  try {
+    const { output } = await generateText({
+      model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
+      output: Output.object({ schema: categorySchema }),
+      abortSignal: AbortSignal.timeout(30_000),
+      prompt: `Classify this support ticket into exactly one category.
 
 Categories:
 - general_question: General questions about the product or service
@@ -29,10 +32,14 @@ Categories:
 
 Subject: ${subject}
 Body: ${body}`,
-  });
+    });
 
-  await prisma.ticket.update({
-    where: { id },
-    data: { category: output.category },
-  });
+    await prisma.ticket.update({
+      where: { id },
+      data: { category: output.category },
+    });
+  } catch (e) {
+    console.error("[classify-ticket] error:", e);
+  }
+  }
 }

@@ -8,7 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
   [TicketStatus.open]: "default",
-  [TicketStatus.resolved]: "secondary",
+  [TicketStatus.processing]: "secondary",
+  [TicketStatus.resolved]: "outline",
   [TicketStatus.closed]: "outline",
 };
 

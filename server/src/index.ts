@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import { auth } from "./lib/auth";
 import boss from "./lib/boss";
 import { JOB_NAME, classifyTicketWorker } from "./workers/classifyTicket";
+import { JOB_NAME as AUTO_RESOLVE_JOB_NAME, autoResolveTicketWorker } from "./workers/autoResolveTicket";
 import usersRouter from "./routes/users";
 import ticketsRouter from "./routes/tickets";
 import repliesRouter from "./routes/replies";
@@ -55,9 +56,12 @@ app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
-boss.start().then(() => {
+boss.start().then(async () => {
+  await boss.createQueue(JOB_NAME, { retryLimit: 0 });
+  await boss.createQueue(AUTO_RESOLVE_JOB_NAME, { retryLimit: 0 });
   boss.work(JOB_NAME, classifyTicketWorker);
+  boss.work(AUTO_RESOLVE_JOB_NAME, autoResolveTicketWorker);
   app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   });
 });

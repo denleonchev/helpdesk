@@ -5,7 +5,8 @@ import boss from "../lib/boss";
 import { TicketStatus } from "../generated/prisma/enums";
 import { inboundEmailSchema } from "@helpdesk/shared";
 import { requireWebhookSecret } from "../middleware/requireWebhookSecret";
-import { JOB_NAME } from "../workers/classifyTicket";
+import { JOB_NAME as CLASSIFY_JOB_NAME } from "../workers/classifyTicket";
+import { JOB_NAME as AUTO_RESOLVE_JOB_NAME } from "../workers/autoResolveTicket";
 
 const sanitize = (s: string) =>
   sanitizeHtml(s, { allowedTags: [], allowedAttributes: {} });
@@ -30,7 +31,10 @@ router.post("/email", requireWebhookSecret, async (req, res) => {
     },
   });
 
-  await boss.send(JOB_NAME, { id: ticket.id, subject: ticket.subject, body: ticket.body });
+  await Promise.all([
+    boss.send(CLASSIFY_JOB_NAME, { id: ticket.id, subject: ticket.subject, body: ticket.body }),
+    boss.send(AUTO_RESOLVE_JOB_NAME, { id: ticket.id, subject: ticket.subject, body: ticket.body, fromName: ticket.fromName }),
+  ]);
 
   res.status(201).json(ticket);
 });

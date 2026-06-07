@@ -52,7 +52,7 @@ export function TicketEditableDetails({ ticketId, ticket, agents }: Props) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.values(TicketStatus).map((s) => (
+                  {Object.values(TicketStatus).filter((s) => s !== TicketStatus.processing).map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
