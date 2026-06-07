@@ -5,6 +5,7 @@ import boss from "../lib/boss";
 import { TicketStatus } from "../generated/prisma/enums";
 import { inboundEmailSchema } from "@helpdesk/shared";
 import { requireWebhookSecret } from "../middleware/requireWebhookSecret";
+import { getAiAgentId } from "../lib/aiAgent";
 import { JOB_NAME as CLASSIFY_JOB_NAME } from "../workers/classifyTicket";
 import { JOB_NAME as AUTO_RESOLVE_JOB_NAME } from "../workers/autoResolveTicket";
 
@@ -21,6 +22,7 @@ router.post("/email", requireWebhookSecret, async (req, res) => {
   }
   const { from, fromName, subject, body } = result.data;
 
+  const aiAgentId = await getAiAgentId();
   const ticket = await prisma.ticket.create({
     data: {
       subject: sanitize(subject),
@@ -28,6 +30,7 @@ router.post("/email", requireWebhookSecret, async (req, res) => {
       fromEmail: from,
       fromName: sanitize(fromName),
       status: TicketStatus.new,
+      ...(aiAgentId && { assignedToId: aiAgentId }),
     },
   });
 

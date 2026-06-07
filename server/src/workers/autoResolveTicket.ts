@@ -63,7 +63,7 @@ Body: ${body}`,
     });
 
     if (!output.canResolve) {
-      await prisma.ticket.update({ where: { id }, data: { status: TicketStatus.open } });
+      await prisma.ticket.update({ where: { id }, data: { status: TicketStatus.open, assignedToId: null } });
       continue;
     }
 
@@ -82,7 +82,7 @@ Body: ${body}`,
       }),
     ]);
   } catch {
-    await prisma.ticket.update({ where: { id }, data: { status: TicketStatus.open } });
+    await prisma.ticket.update({ where: { id }, data: { status: TicketStatus.open, assignedToId: null } });
   }
   }
 }

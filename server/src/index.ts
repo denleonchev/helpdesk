@@ -12,6 +12,7 @@ import usersRouter from "./routes/users";
 import ticketsRouter from "./routes/tickets";
 import repliesRouter from "./routes/replies";
 import webhooksRouter from "./routes/webhooks";
+import statsRouter from "./routes/stats";
 
 const app = express();
 const PORT = new URL(process.env.BETTER_AUTH_URL!).port;
@@ -51,6 +52,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/tickets", ticketsRouter);
 app.use("/api/tickets/:id/replies", repliesRouter);
 app.use("/api/webhooks", webhooksRouter);
+app.use("/api/stats", statsRouter);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
